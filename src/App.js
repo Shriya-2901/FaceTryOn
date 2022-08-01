@@ -1,112 +1,127 @@
-// 1. Install dependencies DONE
-// 2. Import dependencies DONE
-// 3. Setup webcam and canvas DONE
-// 4. Define references to those DONE
-// 5. Load posenet DONE
-// 6. Detect function DONE
-// 7. Drawing utilities from tensorflow DONE
-// 8. Draw functions DONE
-
-// Face Mesh - https://github.com/tensorflow/tfjs-models/tree/master/facemesh
-
-import React, { useRef, useEffect } from "react";
-import "./App.css";
+import React,{useRef, useEffect, useState} from "react";
 import * as tf from "@tensorflow/tfjs";
-// OLD MODEL
-//import * as facemesh from "@tensorflow-models/facemesh";
-
-// NEW MODEL
 import * as facemesh from "@tensorflow-models/face-landmarks-detection";
-import Webcam from "react-webcam";
-import { drawMesh } from "./utilities";
+import './App.css';
+// facemesh- displaying all the detected points
+//import { drawMesh } from "./utilities";
+import spectacles from './glasses.png'
+import Spinner from "./Component/Spinner";
 
-function App() {
-  const webcamRef = useRef(null);
-  const canvasRef = useRef(null);
 
-  //  Load posenet
+
+function App(){
+
+  const [isLoading, setIsLoading] = useState(false);
+  const videoRef= useRef(null);
+  const photoRef = useRef(null);
+
+  const [hasPhoto, setHasPhoto] = useState(false);
+
+  //running the face landmark detection
   const runFacemesh = async () => {
-    // OLD MODEL
-    // const net = await facemesh.load({
-    //   inputResolution: { width: 640, height: 480 },
-    //   scale: 0.8,
-    // });
-    // NEW MODEL
+
     const net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh);
-    setInterval(() => {
-      detect(net);
-    }, 10);
+
+      //running the model on the picture
+      takePhoto(net);
+  
   };
 
-  const detect = async (net) => {
-    if (
-      typeof webcamRef.current !== "undefined" &&
-      webcamRef.current !== null &&
-      webcamRef.current.video.readyState === 4
-    ) {
-      // Get Video Properties
-      const video = webcamRef.current.video;
-      const videoWidth = webcamRef.current.video.videoWidth;
-      const videoHeight = webcamRef.current.video.videoHeight;
+  //getting camera input
+  const getVideo = () => {
+    navigator.mediaDevices.getUserMedia({video : {
+      width: 640 , height:480
+    }})
+    .then(stream =>{
+      //displaying the live camera feed on the screen
+      let video = videoRef.current;
+      video.srcObject = stream;
+      video.play();
+    })
+    .catch(err => {
+      console.error(err);
+    })
+  }
 
-      // Set video width
-      webcamRef.current.video.width = videoWidth;
-      webcamRef.current.video.height = videoHeight;
+  //take picture, set dimensions and run face landmark detection
+  const takePhoto =async(net)=>{
+  setIsLoading(true);
+    const width = 640;
+    const height = 480;
 
-      // Set canvas width
-      canvasRef.current.width = videoWidth;
-      canvasRef.current.height = videoHeight;
+    let video = videoRef.current;
+    let photo = photoRef.current;
 
-      // Make Detections
-      // OLD MODEL
-      //       const face = await net.estimateFaces(video);
-      // NEW MODEL
-      const face = await net.estimateFaces({input:video});
-      console.log(face);
+    photo.width = width;
+    photo.height = height;
 
-      // Get canvas context
-      const ctx = canvasRef.current.getContext("2d");
-      requestAnimationFrame(()=>{drawMesh(face, ctx)});
-    }
-  };
+    //displaying photo taken on screen
+    let ctx = photo.getContext('2d');
+    ctx.drawImage(video,0,0,width, height);
+    setHasPhoto(true);
 
-  useEffect(()=>{runFacemesh()}, []);
+    //running facemesh
+    const face = await net.estimateFaces({input:photo});
+    console.log(face);
+    
+    //For displaying the landmark points, uncomment the below line
+    // requestAnimationFrame(()=>{drawMesh(face,ctx)});
+    
+    //Overlaying the spectacles image on the photo
+    requestAnimationFrame(()=>{displayGlasses(face,ctx)});
+
+    function displayGlasses(face,ctx){
+
+      var xc = face[0].annotations.midwayBetweenEyes[0][0];
+      var yc = face[0].annotations.midwayBetweenEyes[0][1];
+
+      const image = new Image()
+      image.src = spectacles
+
+      image.onload = (()=>{
+
+        var owidth = image.width
+        var oheight = image.height
+
+        var gwidth = 1.4*(face[0].annotations.rightEyebrowLower[0][0] - face[0].annotations.leftEyebrowLower[0][0]) // choosing span of eyes as width
+        var gheight = gwidth/owidth*oheight // maintaining aspect ratio
+        
+        var angle = Math.atan((face[0].annotations.rightEyebrowLower[0][1] - face[0].annotations.leftEyebrowLower[0][1])/(face[0].annotations.rightEyebrowLower[0][0] - face[0].annotations.leftEyebrowLower[0][0]))
+        // angle by which head is turned w.r.t x axis
+        
+        var diffWidth = gwidth/2; // approxiamtely half teh width and length of overlaid glasses
+        var diffHeight = gheight/2; // ""
+        
+        ctx.translate(xc,yc) // translate the canvas to point between eyes
+        ctx.rotate(angle) // rotate it to align with face angle
+        ctx.translate(-diffWidth,-diffHeight) // translate the canvas such that w.r.t origin, center of spectacles lies at diffWidth,dissHeight
+        ctx.drawImage(image,0,0,gwidth,gheight) // draw image 
+        setIsLoading(false);
+      })
+  }
+}
+  
+
+  useEffect(()=>{
+    getVideo();
+   
+  },[videoRef])
 
   return (
     <div className="App">
-      <header className="App-header">
-        <Webcam
-          ref={webcamRef}
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480,
-          }}
-        />
+      <div className="camera">
+        <video ref={videoRef}></video>
+        <button onClick={runFacemesh} disabled={isLoading}>Take a picture!</button>
+      </div>
+      <div className={"result" + (hasPhoto ? 'hasPhoto': '')} id='res'>
+      <div className='loader-container'> {isLoading ? <Spinner /> : null}</div>
+        <canvas id='try_on' ref={photoRef}></canvas>
 
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480,
-          }}
-        />
-      </header>
+      </div>
+      
     </div>
-  );
-}
+  )
+
+};
 
 export default App;

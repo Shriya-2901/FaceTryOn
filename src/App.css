@@ -1,38 +1,83 @@
-.App {
-  text-align: center;
-}
+/* *{background-color: #152238;} */
+.App{
+  width: 100%;
+  height: 100vh;
+  display: flex;
+margin: 0%;
+  flex-direction: row;
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+  align-items: center;
+  justify-content: center;
+  background-color: #152238;
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
 }
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.camera{
+  width: 25%;
+  height: 50vh;
+  margin: 2%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  border-radius: 50px;
+}
+.camera video{
+  width: 100%;
+  border-radius: 10px;
+  box-shadow:black 0px 0px 10px;
+}
+.camera>button{
+  background-color: #4CAF50; /* Green */
+  border: none;
   color: white;
+  padding: 10px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 10px;
+  margin: 10px;
+  cursor: pointer;
+  box-shadow: 10px black;
 }
 
-.App-link {
-  color: #61dafb;
+.camera>button:hover {
+  background-color: #45a049;
+}
+#res canvas{
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  z-index: 0;
+}
+#res{
+  width: 70%;
+  height: 90%;
+  border-radius: 50px;
+  margin: 2%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:black 0px 0px 10px;
+}
+.loader {
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.loader-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 350px;
+  position: absolute;
+  top: 10%;
+  z-index: +2;
 }
