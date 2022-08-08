@@ -23,6 +23,7 @@ function App(){
     const net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh);
 
       //running the model on the picture
+      
       takePhoto(net);
   
   };
@@ -114,7 +115,7 @@ function App(){
         <button onClick={runFacemesh} disabled={isLoading}>Take a picture!</button>
       </div>
       <div className={"result" + (hasPhoto ? 'hasPhoto': '')} id='res'>
-      <div className='loader-container'> {isLoading ? <Spinner /> : null}</div>
+      {/* <div className='loader-container'> {isLoading ? <Spinner /> : null}</div> */}
         <canvas id='try_on' ref={photoRef}></canvas>
 
       </div>
